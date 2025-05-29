@@ -3,14 +3,14 @@ A web-based attendance management system designed to simplify and digitize the a
 
 ## 🚀 Features
 
-Separate login panels for Admin and Students.
-Admin Dashboard 
-View and manage student records.
-Mark or update attendance.
-Student Dashboard
-View personal attendance records.
-Attendance history tracking.
-Responsive design for desktop and mobile users.
+-Separate login panels for Admin and Students.
+-Admin Dashboard 
+-View and manage student records.
+-Mark or update attendance.
+-Student Dashboard
+-View personal attendance records.
+-Attendance history tracking.
+-Responsive design for desktop and mobile users.
 
 
 ## ✅ Usage Process
