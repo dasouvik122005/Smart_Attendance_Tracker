@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            padding: 32px;
+            max-width: 900px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+        h1, h2 {
+            color: #1a202c;
+            font-weight: 700;
+        }
+        p {
+            color: #4a5568;
+            margin-bottom: 8px;
+        }
+        .report-summary {
+            background-color: #e2e8f0;
+            padding: 16px;
+            border-radius: 8px;
+            margin-top: 16px;
+        }
+        .report-summary p {
+            margin-bottom: 8px;
+            color: #2d3748;
+        }
+        .report-summary p:last-child {
+            margin-bottom: 0;
+        }
+        button {
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        button.primary {
+            background-color: #4299e1;
+            color: #ffffff;
+            border: none;
+        }
+        button.primary:hover {
+            background-color: #3182ce;
+            transform: translateY(-1px);
+        }
+        button.primary:active {
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex justify-center items-start min-h-screen p-5">
+    <div style="position: fixed; top: 10px; left: 10px;">
+        <img src="logo.png" alt="JIS Logo" style="height: 50px;">
+    </div>
+
+    <div class="container bg-white rounded-xl shadow-lg p-8 md:p-10 max-w-4xl w-full">
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-3xl font-bold text-gray-800">Student Dashboard</h1>
+            <button id="logoutBtn" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg shadow-md">Logout</button>
+            <button id="Feedback" class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg shadow-md">Feedback</button>
+        </div>
+
+        <div id="profileDetails" class="bg-blue-50 p-6 rounded-lg shadow-sm mb-8">
+            <h2 class="text-2xl font-semibold mb-3 text-blue-800">Welcome, <span id="studentNameDisplay"></span>!</h2>
+        </div>
+
+        <div id="attendanceReportSection" class="p-6 bg-purple-50 rounded-lg shadow-sm">
+            <h3 class="text-2xl font-semibold mb-4 text-purple-800">My Attendance Report</h3>
+            <div id="reportDisplay" class="report-summary hidden">
+                <p id="reportTotalDays"></p>
+                <p id="reportPresentDays"></p>
+                <p id="reportAbsentDays"></p>
+                <p id="reportPercentage"></p>
+            </div>
+
+            <div class="mt-6">
+                <canvas id="attendanceChart"></canvas>
+            </div>
+            <p id="noDataMessage" class="hidden text-center text-gray-500 mt-4">No attendance data available for you yet.</p>
+        </div>
+
+        <div class="mt-8 text-center flex flex-col sm:flex-row justify-center gap-4">
+            <button id="backToLoginBtn" class="primary bg-gray-600 hover:bg-gray-700 text-white p-3 rounded-lg shadow-md">Back to Login</button>
+            <button id="downloadPdfBtn" class="primary bg-orange-500 hover:bg-orange-600 text-white p-3 rounded-lg shadow-md">Download Report as PDF</button>
+        </div>
+    </div>
+
+    <script>
+        // --- Access Control ---
+        const userType = sessionStorage.getItem('userType');
+        const loggedInUserId = sessionStorage.getItem('loggedInUserId');
+
+        if (userType !== 'student' || !loggedInUserId) {
+            window.location.href = 'login.html'; // Redirect if not logged in as student
+        }
+
+        // --- Data Loading ---
+        let students = [];
+        let attendanceRecords = [];
+        let attendanceChartInstance = null; // To hold the Chart.js instance
+
+        const studentNameDisplay = document.getElementById('studentNameDisplay');
+        const reportDisplay = document.getElementById('reportDisplay');
+        const attendanceChartCanvas = document.getElementById('attendanceChart');
+        const noDataMessage = document.getElementById('noDataMessage');
+
+        function loadData() {
+            try {
+                const storedStudents = localStorage.getItem('students');
+                const storedAttendance = localStorage.getItem('attendanceRecords');
+                if (storedStudents) {
+                    students = JSON.parse(storedStudents);
+                }
+                if (storedAttendance) {
+                    attendanceRecords = JSON.parse(storedAttendance);
+                }
+            } catch (e) {
+                console.error("Failed to load data from localStorage:", e);
+            }
+        }
+
+        /**
+         * Generates and displays the attendance report for the logged-in student.
+         * @param {string} studentId - The ID of the logged-in student.
+         */
+        function generateStudentReport(studentId) {
+            const student = students.find(s => s.id === studentId);
+
+            if (!student) {
+                studentNameDisplay.textContent = "Error: Your student data not found.";
+                document.getElementById('attendanceReportSection').classList.add('hidden');
+                document.getElementById('downloadPdfBtn').classList.add('hidden'); // Hide PDF button if no student
+                return;
+            }
+
+            studentNameDisplay.textContent = student.name;
+
+            const studentAttendance = attendanceRecords.filter(rec => rec.studentId === studentId);
+
+            if (studentAttendance.length === 0) {
+                reportDisplay.classList.add('hidden');
+                attendanceChartCanvas.classList.add('hidden');
+                noDataMessage.classList.remove('hidden');
+                document.getElementById('downloadPdfBtn').classList.add('hidden'); // Hide PDF button if no data
+                if (attendanceChartInstance) {
+                    attendanceChartInstance.destroy();
+                    attendanceChartInstance = null;
+                }
+                return;
+            }
+
+            noDataMessage.classList.add('hidden');
+            reportDisplay.classList.remove('hidden');
+            attendanceChartCanvas.classList.remove('hidden');
+            document.getElementById('downloadPdfBtn').classList.remove('hidden'); // Show PDF button if data is present
+
+
+            const totalDays = studentAttendance.length;
+            const presentDays = studentAttendance.filter(rec => rec.status === 'P').length;
+            const absentDays = totalDays - presentDays;
+            const percentage = totalDays > 0 ? ((presentDays / totalDays) * 100).toFixed(2) : 0;
+
+            // Note: reportStudentName is removed here as the student name is in the welcome message
+            document.getElementById('reportTotalDays').textContent = `Total Recorded Days: ${totalDays}`;
+            document.getElementById('reportPresentDays').textContent = `Present Days: ${presentDays}`;
+            document.getElementById('reportAbsentDays').textContent = `Absent Days: ${absentDays}`;
+            document.getElementById('reportPercentage').textContent = `Attendance Percentage: ${percentage}%`;
+
+            drawAttendanceChart(studentAttendance);
+        }
+
+        function drawAttendanceChart(studentAttendance) {
+            if (attendanceChartInstance) {
+                attendanceChartInstance.destroy();
+            }
+
+            const sortedAttendance = [...studentAttendance].sort((a, b) => new Date(a.date) - new Date(b.date));
+
+            const labels = sortedAttendance.map(rec => rec.date);
+            const presentData = sortedAttendance.map(rec => rec.status === 'P' ? 1 : 0);
+
+            attendanceChartInstance = new Chart(attendanceChartCanvas, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Attendance Status (1=Present, 0=Absent)',
+                        data: presentData,
+                        backgroundColor: presentData.map(status => status === 1 ? 'rgba(75, 192, 192, 0.6)' : 'rgba(255, 99, 132, 0.6)'),
+                        borderColor: presentData.map(status => status === 1 ? 'rgba(75, 192, 192, 1)' : 'rgba(255, 99, 132, 1)'),
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 1,
+                            ticks: {
+                                callback: function(value, index, values) {
+                                    if (value === 1) return 'Present';
+                                    if (value === 0) return 'Absent';
+                                    return '';
+                                }
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Date'
+                            }
+                        }
+                    },
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Your Attendance History'
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const value = context.raw;
+                                    return value === 1 ? 'Status: Present' : 'Status: Absent';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // --- Event Listeners ---
+        document.getElementById('backToLoginBtn').addEventListener('click', () => {
+            window.location.href = 'login.html'; // Student always goes back to login
+        });
+
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            sessionStorage.clear(); // Clear all session data
+            window.location.href = 'login.html'; // Redirect to login page
+        });
+
+        document.getElementById('downloadPdfBtn').addEventListener('click', () => {
+            const targetElement = document.querySelector('.container'); // Select the entire container for PDF
+            const opt = {
+                margin: 10,
+                filename: 'My_Attendance_Report.pdf',
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2, logging: true, dpi: 192, letterRendering: true },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+            html2pdf().set(opt).from(targetElement).save();
+        });
+
+        document.getElementById('Feedback').addEventListener('click', () => {
+            window.location.href = 'feedback.html';
+        });
+
+        // --- Initial Load ---
+        window.onload = function() {
+            loadData();
+            const studentId = loggedInUserId; // Get the logged-in student's ID from session storage
+            if (studentId) {
+                generateStudentReport(studentId);
+            } else {
+                studentNameDisplay.textContent = "Error: Student not logged in.";
+                document.getElementById('attendanceReportSection').classList.add('hidden');
+                document.getElementById('downloadPdfBtn').classList.add('hidden');
+            }
+        };
+    </script>
+</body>
+</html>

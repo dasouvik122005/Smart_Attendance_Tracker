@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>View Student Feedback</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            padding: 32px;
+            max-width: 1200px; /* Wider container for table */
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+        h1 {
+            color: #1a202c;
+            font-weight: 700;
+            text-align: center;
+        }
+        label {
+            font-weight: 500;
+            color: #4a5568;
+            display: block;
+            margin-bottom: 8px;
+        }
+        select {
+            padding: 10px 14px;
+            border: 1px solid #cbd5e0;
+            border-radius: 8px;
+            font-size: 16px;
+            color: #2d3748;
+            width: 100%;
+            margin-bottom: 20px;
+            transition: border-color 0.2s;
+        }
+        select:focus {
+            outline: none;
+            border-color: #4299e1;
+            box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.5);
+        }
+        button {
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        button.primary {
+            background-color: #4299e1;
+            color: #ffffff;
+            border: none;
+        }
+        button.primary:hover {
+            background-color: #3182ce;
+            transform: translateY(-1px);
+        }
+        button.primary:active {
+            transform: translateY(0);
+        }
+        .feedback-table-container {
+            overflow-x: auto; /* Allows horizontal scrolling on small screens */
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            background-color: #f7fafc;
+        }
+        .feedback-table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 800px; /* Ensure table doesn't get too squished */
+        }
+        .feedback-table th, .feedback-table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #e2e8f0;
+            text-align: left;
+        }
+        .feedback-table th {
+            background-color: #edf2f7;
+            font-weight: 600;
+            color: #2d3748;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+        }
+        .feedback-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+        .feedback-table tbody tr:hover {
+            background-color: #ebf8ff;
+        }
+        .message-box {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background-color: #48bb78; /* Green for success */
+            color: white;
+            padding: 15px 25px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            z-index: 1000;
+            opacity: 0;
+            transform: translateY(-20px);
+            transition: opacity 0.3s ease-out, transform 0.3s ease-out;
+        }
+        .message-box.error {
+            background-color: #e53e3e; /* Red for error */
+        }
+        .message-box.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex justify-center items-start min-h-screen p-5">
+    <div style="position: fixed; top: 10px; left: 10px;">
+        <img src="logo.png" alt="JIS Logo" style="height: 50px;">
+    </div>
+
+    <div class="container bg-white rounded-xl shadow-lg p-8 md:p-10">
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-3xl font-bold text-gray-800">Student Feedback Overview</h1>
+            <button id="logoutBtn" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg shadow-md">Logout</button>
+        </div>
+
+        <div class="bg-blue-50 p-6 rounded-lg shadow-sm mb-6">
+            <h2 class="text-xl font-semibold mb-4 text-blue-800">Filter Feedback</h2>
+            <div class="flex flex-col md:flex-row gap-4 items-end">
+                <div class="flex-1 w-full">
+                    <label for="filterTeacherSelect" class="block text-gray-700 text-sm font-medium mb-1">Filter by Teacher:</label>
+                    <select id="filterTeacherSelect" class="w-full p-2 border border-blue-300 rounded-lg">
+                        <option value="all">All Teachers</option>
+                        </select>
+                </div>
+                <button id="applyFilterBtn" class="primary bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-lg shadow-md w-full md:w-auto mt-2 md:mt-0">Apply Filter</button>
+            </div>
+        </div>
+
+        <div class="bg-purple-50 p-6 rounded-lg shadow-sm">
+            <h2 class="text-xl font-semibold mb-4 text-purple-800">All Feedback Records</h2>
+            <div id="feedbackTableContainer" class="feedback-table-container">
+                <table id="feedbackTable" class="feedback-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Teacher Name</th>
+                            <th>Course Coverage</th>
+                            <th>Creative Learning</th>
+                            <th>Student Satisfaction</th>
+                            <th>Query Handling</th>
+                            <th>Assessment</th>
+                            <th>Comments</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        </tbody>
+                </table>
+            </div>
+            <p id="noFeedbackMessage" class="hidden text-center text-gray-500 mt-4">No feedback records found.</p>
+        </div>
+
+        <div class="mt-8 text-center">
+            <button id="backToDashboardBtn" class="primary bg-gray-600 hover:bg-gray-700 text-white p-3 rounded-lg shadow-md">Back to Teacher Dashboard</button>
+        </div>
+    </div>
+
+    <div id="messageBox" class="message-box"></div>
+
+    <script>
+        // --- Access Control ---
+        const userType = sessionStorage.getItem('userType');
+        if (userType !== 'teacher') {
+            window.location.href = 'login.html'; // Redirect if not logged in as teacher
+        }
+
+        // --- DOM Elements ---
+        const filterTeacherSelect = document.getElementById('filterTeacherSelect');
+        const applyFilterBtn = document.getElementById('applyFilterBtn');
+        const feedbackTableBody = document.querySelector('#feedbackTable tbody');
+        const noFeedbackMessage = document.getElementById('noFeedbackMessage');
+        const backToDashboardBtn = document.getElementById('backToDashboardBtn');
+        const logoutBtn = document.getElementById('logoutBtn');
+        const messageBox = document.getElementById('messageBox');
+
+        let allFeedback = [];
+        let teachers = []; // To store teacher names for filtering
+
+        /**
+         * Displays a message box.
+         * @param {string} message - The message to display.
+         * @param {boolean} isError - True for error message (red), false for success (green).
+         */
+        function showMessage(message, isError = false) {
+            messageBox.textContent = message;
+            messageBox.classList.remove('error');
+            if (isError) {
+                messageBox.classList.add('error');
+            }
+            messageBox.classList.add('show');
+            setTimeout(() => {
+                messageBox.classList.remove('show');
+            }, 3000); // Message disappears after 3 seconds
+        }
+
+        /**
+         * Loads all feedback records and teacher data from localStorage.
+         */
+        function loadData() {
+            try {
+                const storedFeedback = localStorage.getItem('feedbackRecords');
+                if (storedFeedback) {
+                    allFeedback = JSON.parse(storedFeedback);
+                }
+                const storedTeachers = localStorage.getItem('teachers');
+                if (storedTeachers) {
+                    teachers = JSON.parse(storedTeachers);
+                }
+            } catch (e) {
+                console.error("Failed to load data from localStorage:", e);
+                showMessage("Error loading data. Data might be corrupted.", true);
+            }
+        }
+
+        /**
+         * Populates the teacher filter dropdown.
+         */
+        function populateTeacherFilter() {
+            filterTeacherSelect.innerHTML = '<option value="all">All Teachers</option>';
+            teachers.forEach(teacher => {
+                const option = document.createElement('option');
+                option.value = teacher.id;
+                option.textContent = teacher.name;
+                filterTeacherSelect.appendChild(option);
+            });
+        }
+
+        /**
+         * Renders the feedback table based on filters.
+         * @param {string} filterTeacherId - The ID of the teacher to filter by, or 'all'.
+         */
+        function renderFeedbackTable(filterTeacherId = 'all') {
+            feedbackTableBody.innerHTML = ''; // Clear existing rows
+            let filteredFeedback = allFeedback;
+
+            if (filterTeacherId !== 'all') {
+                filteredFeedback = allFeedback.filter(feedback => feedback.teacherId === filterTeacherId);
+            }
+
+            if (filteredFeedback.length === 0) {
+                noFeedbackMessage.classList.remove('hidden');
+                return;
+            } else {
+                noFeedbackMessage.classList.add('hidden');
+            }
+
+            filteredFeedback.forEach(feedback => {
+                const row = feedbackTableBody.insertRow();
+                row.innerHTML = `
+                    <td>${feedback.date}</td>
+                    <td>${feedback.teacherName || 'N/A'}</td>
+                    <td>${feedback.courseCoverage || 'N/A'}</td>
+                    <td>${feedback.creativeLearning || 'N/A'}</td>
+                    <td>${feedback.studentSatisfaction || 'N/A'}</td>
+                    <td>${feedback.queryHandling || 'N/A'}</td>
+                    <td>${feedback.assessment || 'N/A'}</td>
+                    <td>${feedback.comments || 'No comments'}</td>
+                `;
+            });
+        }
+
+        // --- Event Listeners ---
+        applyFilterBtn.addEventListener('click', () => {
+            const selectedTeacherId = filterTeacherSelect.value;
+            renderFeedbackTable(selectedTeacherId);
+        });
+
+        backToDashboardBtn.addEventListener('click', () => {
+            window.location.href = 'index.html'; // Go back to teacher dashboard
+        });
+
+        logoutBtn.addEventListener('click', () => {
+            sessionStorage.clear(); // Clear all session data
+            window.location.href = 'login.html'; // Redirect to login page
+        });
+
+        // --- Initial Load ---
+        window.onload = function() {
+            loadData();
+            populateTeacherFilter();
+            renderFeedbackTable(); // Render all feedback initially
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Attendance - Teacher Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            padding: 32px;
+            max-width: 900px;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+        h1, h2 {
+            color: #1a202c;
+            font-weight: 700;
+        }
+        label {
+            font-weight: 500;
+            color: #4a5568;
+        }
+        input[type="text"], input[type="date"], select {
+            padding: 10px 14px;
+            border: 1px solid #cbd5e0;
+            border-radius: 8px;
+            font-size: 16px;
+            color: #2d3748;
+            transition: border-color 0.2s;
+        }
+        input[type="text"]:focus, input[type="date"]:focus, select:focus {
+            outline: none;
+            border-color: #4299e1;
+            box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.5);
+        }
+        button {
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        button.primary {
+            background-color: #4299e1;
+            color: #ffffff;
+            border: none;
+        }
+        button.primary:hover {
+            background-color: #3182ce;
+            transform: translateY(-1px);
+        }
+        button.primary:active {
+            transform: translateY(0);
+        }
+        .student-item {
+            background-color: #edf2f7;
+            padding: 12px 16px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+        .student-item:last-child {
+            margin-bottom: 0;
+        }
+        .message-box {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background-color: #48bb78; /* Green for success */
+            color: white;
+            padding: 15px 25px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            z-index: 1000;
+            opacity: 0;
+            transform: translateY(-20px);
+            transition: opacity 0.3s ease-out, transform 0.3s ease-out;
+        }
+        .message-box.error {
+            background-color: #e53e3e; /* Red for error */
+        }
+        .message-box.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex justify-center items-start min-h-screen p-5">
+    <div style="position: fixed; top: 10px; left: 10px;">
+        <img src="logo.png" alt="JIS Logo" style="height: 50px;">
+    </div>
+
+    <div class="container bg-white rounded-xl shadow-lg p-8 md:p-10 max-w-4xl w-full">
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-3xl font-bold text-gray-800">Teacher Dashboard</h1>
+            <button id="responseBtn" class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg shadow-md">Response</button>
+            <button id="logoutBtn" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-lg shadow-md">Logout</button>
+            
+        </div>
+
+        <div id="messageBox" class="message-box"></div>
+
+        <section class="mb-8 p-6 bg-blue-50 rounded-lg shadow-sm">
+            <h2 class="text-2xl font-semibold mb-4 text-blue-800">Add New Student</h2>
+            <div class="flex flex-col md:flex-row gap-4">
+                <input type="text" id="newStudentName" placeholder="Enter student name" class="flex-grow p-3 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-transparent">
+                <button id="addStudentBtn" class="primary bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-lg shadow-md">Add Student</button>
+            </div>
+            <div id="studentList" class="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                </div>
+        </section>
+
+        <section class="mb-8 p-6 bg-green-50 rounded-lg shadow-sm">
+            <h2 class="text-2xl font-semibold mb-4 text-green-800">Mark Attendance</h2>
+            <div class="mb-4">
+                <label for="attendanceDate" class="block text-gray-700 text-sm font-medium mb-2">Select Date:</label>
+                <input type="date" id="attendanceDate" class="w-full p-3 border border-green-300 rounded-lg focus:ring-2 focus:ring-green-400 focus:border-transparent">
+            </div>
+            <div id="attendanceStudentList" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mb-6">
+                </div>
+            <button id="markAttendanceBtn" class="primary bg-green-600 hover:bg-green-700 text-white p-3 rounded-lg shadow-md w-full">Mark Attendance</button>
+        </section>
+
+        <section class="p-6 bg-purple-50 rounded-lg shadow-sm">
+            <h2 class="text-2xl font-semibold mb-4 text-purple-800">View Student Profile</h2>
+            <div class="mb-4">
+                <label for="profileStudentSelect" class="block text-gray-700 text-sm font-medium mb-2">Select Student:</label>
+                <select id="profileStudentSelect" class="w-full p-3 border border-purple-300 rounded-lg focus:ring-2 focus:ring-purple-400 focus:border-transparent">
+                    <option value="">-- Select a Student --</option>
+                    </select>
+            </div>
+            <button id="viewProfileBtn" class="primary bg-purple-600 hover:bg-purple-700 text-white p-3 rounded-lg shadow-md w-full">View Student Profile</button>
+        </section>
+    </div>
+
+    <script>
+        // --- Access Control ---
+        const userType = sessionStorage.getItem('userType');
+        if (userType !== 'teacher') {
+            window.location.href = 'login.html'; // Redirect if not logged in as teacher
+        }
+
+        // --- Global Data Storage and Management ---
+        let students = [];
+        let attendanceRecords = [];
+
+        const studentListDiv = document.getElementById('studentList');
+        const attendanceStudentListDiv = document.getElementById('attendanceStudentList');
+        const profileStudentSelect = document.getElementById('profileStudentSelect');
+        const messageBox = document.getElementById('messageBox');
+        const logoutBtn = document.getElementById('logoutBtn');
+
+        /**
+         * Displays a temporary message box for notifications.
+         * @param {string} message - The message to display.
+         * @param {boolean} isError - True if it's an error message, false for success.
+         */
+        function showMessage(message, isError = false) {
+            messageBox.textContent = message;
+            messageBox.classList.remove('error');
+            if (isError) {
+                messageBox.classList.add('error');
+            }
+            messageBox.classList.add('show');
+            setTimeout(() => {
+                messageBox.classList.remove('show');
+            }, 3000); // Message disappears after 3 seconds
+        }
+
+        /**
+         * Loads students and attendance records from localStorage.
+         */
+        function loadData() {
+            try {
+                const storedStudents = localStorage.getItem('students');
+                const storedAttendance = localStorage.getItem('attendanceRecords');
+
+                if (storedStudents) {
+                    students = JSON.parse(storedStudents);
+                }
+                if (storedAttendance) {
+                    attendanceRecords = JSON.parse(storedAttendance);
+                }
+            } catch (e) {
+                console.error("Failed to load data from localStorage:", e);
+                showMessage("Error loading data. Data might be corrupted.", true);
+            }
+        }
+
+        /**
+         * Saves students and attendance records to localStorage.
+         */
+        function saveData() {
+            try {
+                localStorage.setItem('students', JSON.stringify(students));
+                localStorage.setItem('attendanceRecords', JSON.stringify(attendanceRecords));
+            } catch (e) {
+                console.error("Failed to save data to localStorage:", e);
+                showMessage("Error saving data. Please check browser storage.", true);
+            }
+        }
+
+        /**
+         * Renders the list of students in the "Add New Student" section with edit/delete buttons.
+         */
+        function renderStudentList() {
+            studentListDiv.innerHTML = ''; // Clear existing list
+            if (students.length === 0) {
+                studentListDiv.innerHTML = '<p class="text-gray-500 text-center col-span-full">No students added yet.</p>';
+                return;
+            }
+            students.forEach(student => {
+                const studentItem = document.createElement('div');
+                studentItem.className = 'student-item bg-blue-100 text-blue-900';
+                studentItem.dataset.id = student.id; // Store ID on the item for easy access
+
+                studentItem.innerHTML = `
+                    <span class="student-name">${student.name}</span>
+                    <div>
+                        <button data-id="${student.id}" class="edit-student-btn bg-yellow-500 hover:bg-yellow-600 text-white text-xs px-2 py-1 rounded-md shadow-sm mr-2">Edit</button>
+                        <button data-id="${student.id}" class="delete-student-btn bg-red-500 hover:bg-red-600 text-white text-xs px-2 py-1 rounded-md shadow-sm">Delete</button>
+                    </div>
+                `;
+                studentListDiv.appendChild(studentItem);
+            });
+
+            // Add event listeners for edit and delete buttons
+            document.querySelectorAll('.edit-student-btn').forEach(button => {
+                button.addEventListener('click', (event) => {
+                    const studentIdToEdit = event.target.dataset.id;
+                    editStudent(studentIdToEdit);
+                });
+            });
+            document.querySelectorAll('.delete-student-btn').forEach(button => {
+                button.addEventListener('click', (event) => {
+                    const studentIdToDelete = event.target.dataset.id;
+                    deleteStudent(studentIdToDelete);
+                });
+            });
+        }
+
+        /**
+         * Initiates the editing process for a student.
+         * @param {string} studentId - The ID of the student to edit.
+         */
+        function editStudent(studentId) {
+            const studentItem = document.querySelector(`.student-item[data-id="${studentId}"]`);
+            if (!studentItem) return;
+
+            const studentNameSpan = studentItem.querySelector('.student-name');
+            const currentName = studentNameSpan.textContent;
+
+            // Create an input field
+            const inputField = document.createElement('input');
+            inputField.type = 'text';
+            inputField.value = currentName;
+            inputField.className = 'flex-grow p-1 border border-blue-400 rounded-md text-sm'; // Tailwind styling
+            inputField.style.minWidth = '120px'; // Ensure it's wide enough
+            inputField.style.maxWidth = 'calc(100% - 100px)'; // Max width to leave space for buttons
+
+            // Create Save and Cancel buttons
+            const saveBtn = document.createElement('button');
+            saveBtn.textContent = 'Save';
+            saveBtn.className = 'bg-green-500 hover:bg-green-600 text-white text-xs px-2 py-1 rounded-md shadow-sm ml-2';
+            saveBtn.onclick = () => saveStudentEdit(studentId, inputField.value);
+
+            const cancelBtn = document.createElement('button');
+            cancelBtn.textContent = 'Cancel';
+            cancelBtn.className = 'bg-gray-500 hover:bg-gray-600 text-white text-xs px-2 py-1 rounded-md shadow-sm ml-1';
+            cancelBtn.onclick = () => renderStudentList(); // Revert by re-rendering
+
+            // Replace name span and buttons
+            studentNameSpan.replaceWith(inputField);
+            const buttonsDiv = studentItem.querySelector('div'); // Get the div containing buttons
+            buttonsDiv.innerHTML = ''; // Clear existing buttons
+            buttonsDiv.appendChild(saveBtn);
+            buttonsDiv.appendChild(cancelBtn);
+
+            inputField.focus(); // Focus on the input field
+        }
+
+        /**
+         * Saves the edited student name.
+         * @param {string} studentId - The ID of the student being edited.
+         * @param {string} newName - The new name for the student.
+         */
+        function saveStudentEdit(studentId, newName) {
+            const trimmedName = newName.trim();
+
+            if (!trimmedName) {
+                showMessage("Student name cannot be empty.", true);
+                renderStudentList(); // Revert to original display
+                return;
+            }
+
+            // Check for duplicate names (case-insensitive), excluding the student being edited
+            if (students.some(s => s.id !== studentId && s.name.toLowerCase() === trimmedName.toLowerCase())) {
+                showMessage("Another student with this name already exists. Please use a unique name.", true);
+                renderStudentList(); // Revert to original display
+                return;
+            }
+
+            const studentIndex = students.findIndex(s => s.id === studentId);
+            if (studentIndex !== -1) {
+                students[studentIndex].name = trimmedName;
+                saveData();
+                renderStudentList(); // Re-render the list with the updated name
+                renderStudentsForAttendance(); // Update attendance checkboxes
+                renderStudentDropdown(); // Update dropdown
+                showMessage(`Student name updated to "${trimmedName}" successfully!`);
+            } else {
+                showMessage("Error: Student not found for editing.", true);
+                renderStudentList(); // Revert to original display
+            }
+        }
+
+        /**
+         * Deletes a student and their attendance records.
+         * @param {string} studentId - The ID of the student to delete.
+         */
+        function deleteStudent(studentId) {
+            if (!confirm("Are you sure you want to delete this student and ALL their attendance records? This action cannot be undone.")) {
+                return; // User cancelled
+            }
+
+            // Remove student from the students array
+            students = students.filter(s => s.id !== studentId);
+            // Remove all attendance records for this student
+            attendanceRecords = attendanceRecords.filter(rec => rec.studentId !== studentId);
+
+            saveData();
+            renderStudentList();
+            renderStudentsForAttendance();
+            renderStudentDropdown();
+            showMessage("Student and their attendance deleted successfully!");
+        }
+
+        /**
+         * Renders the list of students with checkboxes for marking attendance.
+         */
+        function renderStudentsForAttendance() {
+            attendanceStudentListDiv.innerHTML = ''; // Clear existing checkboxes
+            if (students.length === 0) {
+                attendanceStudentListDiv.innerHTML = '<p class="text-gray-500 col-span-full">No students available to mark attendance. Add students first.</p>';
+                return;
+            }
+            students.forEach(student => {
+                const studentCheckboxDiv = document.createElement('div');
+                studentCheckboxDiv.className = 'flex items-center bg-green-100 p-3 rounded-lg shadow-sm';
+                studentCheckboxDiv.innerHTML = `
+                    <input type="checkbox" id="student-${student.id}" data-id="${student.id}" class="form-checkbox h-5 w-5 text-green-600 rounded focus:ring-green-500">
+                    <label for="student-${student.id}" class="ml-3 text-gray-800 font-medium">${student.name}</label>
+                `;
+                attendanceStudentListDiv.appendChild(studentCheckboxDiv);
+            });
+        }
+
+        /**
+         * Populates the student selection dropdown for profile viewing.
+         */
+        function renderStudentDropdown() {
+            profileStudentSelect.innerHTML = '<option value="">-- Select a Student --</option>'; // Clear and add default
+            students.forEach(student => {
+                const option = document.createElement('option');
+                option.value = student.id;
+                option.textContent = student.name;
+                profileStudentSelect.appendChild(option);
+            });
+        }
+
+        /**
+         * Adds a new student to the system.
+         */
+        document.getElementById('addStudentBtn').addEventListener('click', () => {
+            const newStudentNameInput = document.getElementById('newStudentName');
+            const name = newStudentNameInput.value.trim();
+
+            if (name) {
+                // Check for duplicate names (case-insensitive)
+                if (students.some(s => s.name.toLowerCase() === name.toLowerCase())) {
+                    showMessage("A student with this name already exists. Please use a unique name.", true);
+                    return; // Stop execution if name is not unique
+                }
+                const newStudent = {
+                    id: crypto.randomUUID(), // Generate a unique ID for the student
+                    name: name
+                };
+                students.push(newStudent);
+                saveData();
+                renderStudentList();
+                renderStudentsForAttendance();
+                renderStudentDropdown();
+                newStudentNameInput.value = ''; // Clear input field
+                showMessage("Student added successfully!");
+            } else {
+                showMessage("Please enter a student name.", true);
+            }
+        });
+
+        /**
+         * Marks attendance for selected students on the chosen date.
+         */
+        document.getElementById('markAttendanceBtn').addEventListener('click', () => {
+            const attendanceDateInput = document.getElementById('attendanceDate');
+            const selectedDate = attendanceDateInput.value;
+
+            if (!selectedDate) {
+                showMessage("Please select a date for attendance.", true);
+                return;
+            }
+
+            // Basic validation: Prevent marking attendance for future dates
+            const today = new Date();
+            const selectedDateTime = new Date(selectedDate + 'T00:00:00'); // Add time to avoid timezone issues
+            if (selectedDateTime > today) {
+                showMessage("Cannot mark attendance for a future date.", true);
+                return;
+            }
+
+
+            const studentCheckboxes = attendanceStudentListDiv.querySelectorAll('input[type="checkbox"]');
+            let markedPresentCount = 0;
+
+            // Prepare a set of student IDs that were checked as present
+            const presentStudentIds = new Set();
+            studentCheckboxes.forEach(checkbox => {
+                if (checkbox.checked) {
+                    presentStudentIds.add(checkbox.dataset.id);
+                }
+            });
+
+            // Update/add attendance records
+            students.forEach(student => {
+                const existingRecordIndex = attendanceRecords.findIndex(
+                    rec => rec.studentId === student.id && rec.date === selectedDate
+                );
+
+                if (presentStudentIds.has(student.id)) {
+                    // Mark as Present
+                    if (existingRecordIndex !== -1) {
+                        attendanceRecords[existingRecordIndex].status = 'P';
+                    } else {
+                        attendanceRecords.push({ studentId: student.id, date: selectedDate, status: 'P' });
+                    }
+                    markedPresentCount++;
+                } else {
+                    // Mark as Absent
+                    if (existingRecordIndex !== -1) {
+                        attendanceRecords[existingRecordIndex].status = 'A';
+                    } else {
+                        attendanceRecords.push({ studentId: student.id, date: selectedDate, status: 'A' });
+                    }
+                }
+            });
+
+            if (students.length === 0) {
+                showMessage("No students to mark attendance for. Please add students first.", true);
+            } else {
+                 showMessage(`Attendance marked for ${selectedDate}. ${markedPresentCount} students marked present.`, false);
+            }
+
+            saveData();
+            // Optionally, uncheck all checkboxes after marking attendance
+            studentCheckboxes.forEach(checkbox => checkbox.checked = false);
+        });
+
+        /**
+         * Redirects to the student profile page with the selected student's ID.
+         */
+        document.getElementById('viewProfileBtn').addEventListener('click', () => {
+            const selectedStudentId = profileStudentSelect.value;
+
+            if (!selectedStudentId) {
+                showMessage("Please select a student to view their profile.", true);
+                return;
+            }
+            // Redirect to student_profile.html, passing the student ID as a query parameter
+            window.location.href = `student_profile.html?id=${selectedStudentId}`;
+        });
+
+        logoutBtn.addEventListener('click', () => {
+            sessionStorage.clear(); // Clear all session data
+            window.location.href = 'login.html'; // Redirect to login page
+        });
+
+        // Add this for Response button redirect
+        document.getElementById('responseBtn').addEventListener('click', () => {
+            window.location.href = 'responce.html';
+        });
+
+        // --- Initial Load and Setup ---
+        window.onload = function() {
+            // Set default date to today
+            const today = new Date();
+            const yyyy = today.getFullYear();
+            const mm = String(today.getMonth() + 1).padStart(2, '0'); // Months are 0-indexed
+            const dd = String(today.getDate()).padStart(2, '0');
+            document.getElementById('attendanceDate').value = `${yyyy}-${mm}-${dd}`;
+
+            loadData();
+            renderStudentList();
+            renderStudentsForAttendance();
+            renderStudentDropdown();
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Attendance System</title>
+    <link rel="icon" type="image/png" href="logo.png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #fcfcfc;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .login-container {
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            padding: 32px;
+            max-width: 450px;
+            width: 100%;
+            text-align: center;
+            /* Animation styles */
+            opacity: 0;
+            transform: translateY(40px) scale(0.98);
+            animation: fadeSlideIn 0.8s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+            transition: box-shadow 0.3s, transform 0.3s;
+        }
+        .login-container:hover {
+            box-shadow: 0 8px 32px rgba(66, 153, 225, 0.18);
+            transform: translateY(-4px) scale(1.02);
+        }
+        @keyframes fadeSlideIn {
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+        h1 {
+            color: #1a202c;
+            font-weight: 700;
+            margin-bottom: 24px;
+            font-family: 'Segoe UI', 'Poppins', 'Inter', Arial, sans-serif; /* Changed font */
+            letter-spacing: 1px;
+        }
+        label {
+            font-weight: 500;
+            color: #4a5568;
+            display: block;
+            margin-bottom: 8px;
+            text-align: left;
+        }
+        input[type="text"], input[type="password"] {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid #cbd5e0;
+            border-radius: 8px;
+            font-size: 16px;
+            color: #2d3748;
+            transition: border-color 0.2s;
+            margin-bottom: 16px;
+        }
+        input[type="text"]:focus, input[type="password"]:focus {
+            outline: none;
+            border-color: #4299e1;
+            box-shadow: 0 0 0 4px rgba(66, 153, 225, 0.18);
+            transition: box-shadow 0.3s, border-color 0.3s;
+        }
+        button {
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s;
+            width: 100%;
+            margin-top: 10px;
+        }
+        button.primary {
+            background-color: #4299e1;
+            color: #ffffff;
+            border: none;
+        }
+        button.primary:hover {
+            background-color: #3182ce;
+            transform: translateY(-1px);
+        }
+        button.primary:active {
+            transform: translateY(0);
+        }
+        .message-box {
+            background-color: #e53e3e; /* Red for error */
+            color: white;
+            padding: 10px 15px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            font-size: 14px;
+            text-align: left;
+            display: none; /* Hidden by default */
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex justify-center items-center min-h-screen p-5">
+    <div style="position: fixed; top: 10px; left: 10px;">
+        <img src="logo.png" alt="JIS Logo" style="height: 50px;">
+    </div>
+
+    <div class="login-container bg-white rounded-xl shadow-lg p-8">
+        <h1 class="text-3xl font-bold text-gray-800">Login</h1>
+
+        <div id="errorMessage" class="message-box"></div>
+
+        <form id="loginForm">
+            <div class="mb-4">
+                <label for="username">Username:</label>
+                <input type="text" id="username" name="username" required>
+            </div>
+            <div class="mb-6">
+                <label for="password">Password:</label>
+                <input type="password" id="password" name="password" required>
+            </div>
+            <button type="submit" id="teacherLoginBtn" class="primary bg-blue-600 hover:bg-blue-700">Login as Teacher</button>
+            <button type="submit" id="studentLoginBtn" class="primary bg-green-600 hover:bg-green-700 mt-4">Login as Student</button>
+        </form>
+
+        <p class="text-sm text-gray-500 mt-6">
+            <strong class="font-semibold">Demo Credentials:</strong><br>
+            Teacher: `username: teacher`, `password: teacher123`<br>
+            Student: `username: (any student name)`, `password: student123`
+        </p>
+    </div>
+
+    <script>
+        const teacherCredentials = { username: 'teacher', password: 'teacher123' }; // Updated teacher password
+        const studentDefaultPassword = 'student123'; // All students use this password for demo
+
+        const loginForm = document.getElementById('loginForm');
+        const usernameInput = document.getElementById('username');
+        const passwordInput = document.getElementById('password');
+        const teacherLoginBtn = document.getElementById('teacherLoginBtn');
+        const studentLoginBtn = document.getElementById('studentLoginBtn');
+        const errorMessageDiv = document.getElementById('errorMessage');
+
+        /**
+         * Shows an error message.
+         * @param {string} message - The error message to display.
+         */
+        function showErrorMessage(message) {
+            errorMessageDiv.textContent = message;
+            errorMessageDiv.style.display = 'block';
+            setTimeout(() => {
+                errorMessageDiv.style.display = 'none';
+            }, 3000); // Hide after 3 seconds
+        }
+
+        /**
+         * Loads student data from localStorage (needed to validate student login).
+         * @returns {Array} Array of student objects.
+         */
+        function loadStudents() {
+            try {
+                const storedStudents = localStorage.getItem('students');
+                return storedStudents ? JSON.parse(storedStudents) : [];
+            } catch (e) {
+                console.error("Failed to load students from localStorage:", e);
+                return [];
+            }
+        }
+
+        teacherLoginBtn.addEventListener('click', (event) => {
+            event.preventDefault(); // Prevent default form submission
+
+            const username = usernameInput.value.trim();
+            const password = passwordInput.value;
+
+            if (username === teacherCredentials.username && password === teacherCredentials.password) {
+                sessionStorage.setItem('userType', 'teacher');
+                sessionStorage.setItem('loggedInUserId', 'teacher_id'); // A generic ID for the teacher
+                window.location.href = 'index.html'; // Redirect to teacher's main page
+            } else {
+                showErrorMessage("Invalid teacher username or password.");
+            }
+        });
+
+        studentLoginBtn.addEventListener('click', (event) => {
+            event.preventDefault(); // Prevent default form submission
+
+            const username = usernameInput.value.trim();
+            const password = passwordInput.value;
+
+            if (!username || !password) {
+                showErrorMessage("Please enter both username and password.");
+                return;
+            }
+
+            if (password !== studentDefaultPassword) {
+                showErrorMessage("Invalid student password.");
+                return;
+            }
+
+            const students = loadStudents();
+            const loggedInStudent = students.find(s => s.name.toLowerCase() === username.toLowerCase());
+
+            if (loggedInStudent) {
+                sessionStorage.setItem('userType', 'student');
+                sessionStorage.setItem('loggedInUserId', loggedInStudent.id);
+                // Redirect to the new student dashboard
+                window.location.href = `student_dashboard.html`;
+            } else {
+                showErrorMessage("Student with that username not found. Please register as a student first (add student on main page).");
+            }
+        });
+
+        // Optional: Clear session storage on page load (in case user just closed tab and reopened login)
+        // window.onload = () => {
+        //     sessionStorage.clear();
+        // };
+    </script>
+</body>
+</html>
