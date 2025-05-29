@@ -12,13 +12,10 @@ A web-based attendance management system designed to simplify and digitize the a
   - 🧾 Attendance history tracking.
   - 🧑‍💻 Responsive design for desktop and mobile users.
 
-Sure! Here's a clear and concise **"Usage Process"** section that you can include in your README.md file or documentation for the **Smart Attendance Tracker**:
-
----
 
 ## ✅ Usage Process
 
- For teacher the username is "teacher" and password is "teacher123". If a teacher add any students name then that name is the student username and passoword "Student123" is same for every students.
+ For the teacher, the username is "teacher" and the password is "teacher123". If a teacher adds any student's name, then that name is the student's username and password "Student123" is the same for every student.
 
 ## 📩 Feedback
 
