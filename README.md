@@ -1,4 +1,4 @@
-# Smart_Attendance_Tracker
+# Smart Attendance Tracker
 A web-based attendance management system designed to simplify and digitize the attendance tracking process for educational institutions and organizations. This application allows admins and students to log in, mark attendance, and monitor records in a user-friendly environment.
 
 ## 🚀 Features
